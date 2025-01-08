@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For you, Zhaniya!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ff99cc;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+           cursor: url(https://cur.cursors-4u.net/anime/ani-9/ani839.cur), auto !important;
+        }
+
+        #loading {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-color: #ff99cc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7em;
+            color: #fff;
+            z-index: 9999;
+            font-weight: bold;
+        }
+
+        #maze {
+            position: relative;
+            border-style: solid;
+            background-color: #ff99cc;
+            width: 95vh;
+            height: 95vh;
+            border: 20px solid white;
+            border-radius: 15px;
+        }
+
+        .block {
+            float: left;
+            height: calc(95vh / 21);
+            width: calc(95vh / 21);
+        }
+
+        .wall {
+            background-color: #ff66b2;
+        }
+
+        .me {
+            background-size: cover;
+            background-image: url('cutone.png');
+        }
+
+        .finish {
+            background-size: cover;
+            background-image: url('tigerFinal.png');
+        }
+
+        #complete {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ff99cc;
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        #complete h1 {
+            font-size: 10em;
+            color: #ff3399;
+            margin: 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #restartButton {
+            padding: 20px 40px;
+            font-size: 2em;
+            background-color: #ff66b2;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+
+        #restartButton:hover {
+            background-color: #ff3399;
+            font-weight: bold;
+        }
+
+        .heart {
+            filter: drop-shadow(0 0 0 white) drop-shadow(0 0 30px white);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">0%</div>
+    <audio id="bgMusic" loop>
+        <source src="The_Neighbourhood-Flawless-world79.spcs.bio.mp3" type="audio/mp3">
+    </audio>
+    <audio id="tigerSound">
+        <source src="ryik-tigra-korotkiy-zvuk-30578.mp3" type="audio/mpeg">
+    </audio>
+    <div id='maze'></div>
+    <div id='complete'>
+        <h1>Ты победила!</h1>
+        <div class="heart">
+            <img src="image (1).png" alt="together">
+        </div>
+        <button id="restartButton">Играть снова</button>
+    </div>
+    <script>
+        bgMusic.volume = 0.6
+        tigerSound.volume = 1
+        let loadProgress = 0;
+        const loadingScreen = document.getElementById('loading');
+        const interval = setInterval(() => {
+            loadProgress += 3;
+            loadingScreen.textContent = loadProgress + '%';
+            if (loadProgress >= 100) {
+                clearInterval(interval);
+                loadingScreen.style.display = 'none';
+            }
+        }, 200);
+        document.getElementById('bgMusic').play();
+        function initMaze(hate, width, maze, walls, currentPosition) {
+            hate = hate % 2 == 0 ? hate + 1 : hate;
+            width = width % 2 == 0 ? width + 1 : width;
+            const mazeElement = document.getElementById('maze');
+            mazeElement.innerHTML = '';
+
+            for (let y = 0; y < hate; y++) {
+                maze[y] = [];
+                for (let x = 0; x < width; maze[y][x++] = 'wall') {
+                    const el = mazeElement.appendChild(document.createElement("div"));
+                    el.className = 'block wall';
+                    el.setAttribute('id', y + '-' + x);
+                }
+            }
+
+            function amaze(y, x, addBlockWalls) {
+                maze[y][x] = 'maze';
+                document.getElementById(y + '-' + x).className = 'block';
+                if (addBlockWalls && valid(y + 1, x) && (maze[y + 1][x] == 'wall')) walls.push([y + 1, x, [y, x]]);
+                if (addBlockWalls && valid(y - 1, x) && (maze[y - 1][x] == 'wall')) walls.push([y - 1, x, [y, x]]);
+                if (addBlockWalls && valid(y, x + 1) && (maze[y][x + 1] == 'wall')) walls.push([y, x + 1, [y, x]]);
+                if (addBlockWalls && valid(y, x - 1) && (maze[y][x - 1] == 'wall')) walls.push([y, x - 1, [y, x]]);
+            }
+
+            function valid(a, b) {
+                return (a < hate && a >= 0 && b < width && b >= 0);
+            }
+
+            amaze(currentPosition[0], currentPosition[1], true);
+
+            while (walls.length != 0) {
+                const randomWall = walls[Math.floor(Math.random() * walls.length)],
+                    host = randomWall[2],
+                    opposite = [(host[0] + (randomWall[0] - host[0]) * 2), (host[1] + (randomWall[1] - host[1]) * 2)];
+
+                if (valid(opposite[0], opposite[1])) {
+                    if (maze[opposite[0]][opposite[1]] == 'maze') walls.splice(walls.indexOf(randomWall), 1);
+                    else amaze(randomWall[0], randomWall[1], false), amaze(opposite[0], opposite[1], true);
+                } else walls.splice(walls.indexOf(randomWall), 1);
+            }
+
+            document.getElementById('0-0').className = 'block me';
+            document.getElementById((hate - 1) + '-' + (width - 1)).className = 'block finish';
+
+            return [hate, currentPosition];
+        }
+
+        let gameState = initMaze(21, 21, [], [], [0, 0]);
+        const completeScreen = document.getElementById('complete');
+        completeScreen.style.display = 'none';
+        document.getElementById('restartButton').addEventListener('click', () => {
+            completeScreen.style.display = 'none';
+            document.getElementById('maze').style.display = 'block';
+            gameState = initMaze(21, 21, [], [], [0, 0]);
+        });
+
+        document.body.onkeydown = function (e) {
+            const currentPosition = gameState[1];
+            const hate = gameState[0];
+            const newPosition = [currentPosition[0] + ((e.keyCode - 39) % 2), currentPosition[1] + ((e.keyCode - 38) % 2)];
+
+            const mazeElement = document.getElementById(newPosition[0] + '-' + newPosition[1]);
+            if (mazeElement && mazeElement.className !== 'block wall') {
+                document.getElementById(currentPosition[0] + '-' + currentPosition[1]).className = 'block';
+                gameState[1] = newPosition;
+                document.getElementById(newPosition[0] + '-' + newPosition[1]).className = 'block me';
+
+                if (newPosition[0] == hate - 1 && newPosition[1] == hate - 1) {
+                    document.getElementById('maze').style.display = 'none';
+                    completeScreen.style.display = 'flex';
+                    document.getElementById('tigerSound').play();
+                }
+            }
+        };
+    </script>
+</body>
+
+</html>
